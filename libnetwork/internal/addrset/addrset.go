@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/libnetwork/bitmap"
 	"github.com/docker/docker/libnetwork/internal/netiputil"
 	"github.com/docker/docker/libnetwork/ipbits"
+	"lukechampine.com/uint128"
 )
 
 var (
@@ -33,6 +34,8 @@ const (
 	maxBitsPerBitmap = 63
 	// minPrefixLen is the prefix length corresponding to maxBitsPerBitmap
 	minPrefixLen = (net.IPv6len * 8) - maxBitsPerBitmap
+	// MaxUint64 is the maximum value for a uint64
+	MaxUint64 = ^uint64(0)
 )
 
 // AddrSet is a set of IP addresses.
@@ -172,6 +175,49 @@ func (as *AddrSet) getBitmap(addr netip.Addr) (*bitmap.Bitmap, netip.Prefix, err
 		as.bitmaps[bmKey] = bm
 	}
 	return bm, bmKey, nil
+}
+
+// Unselected returns the number of unselected addresses in the set.
+// If the amount of unselected addresses is greater than the maximum uint64, it returns the maximum uint64.
+func (as *AddrSet) Unselected() (unselected uint64) {
+	bits := as.pool.Addr().BitLen() - as.pool.Bits()
+	// If there are no bitmaps, all addresses are unselected.
+	if len(as.bitmaps) == 0 {
+		// If the pool is bigger than Bitmap's capacity, return the maximum uint64.
+		if bits > maxBitsPerBitmap {
+			return MaxUint64
+		}
+		// otherwise, return the full capacity of the subnet
+		return uint64(1) << bits
+	}
+	bms := uint64(1)
+	// If the subnet is bigger than Bitmap's capacity, calculate the number of bitmaps we have.
+	if bits > maxBitsPerBitmap {
+		bms = 1 << (bits - maxBitsPerBitmap)
+	}
+
+	// Calculate the number of unselected addresses in each bitmap.
+	for _, bm := range as.bitmaps {
+		if bms > 0 {
+			bms--
+		}
+		uns := bm.Unselected()
+		if unselected > MaxUint64-uns {
+			return MaxUint64
+		}
+		unselected += uns
+	}
+
+	// Sum of the addresses of the rest of the absent bitmaps.
+	if bms > 0 {
+		cnt := uint128.From64(as.addrsPerBitmap())
+		cnt = cnt.Mul(uint128.From64(bms))
+		if cnt.Add64(unselected).Cmp(uint128.From64(MaxUint64)) > 0 {
+			return MaxUint64
+		}
+		unselected += cnt.Lo
+	}
+	return unselected
 }
 
 func (as *AddrSet) addrsPerBitmap() uint64 {

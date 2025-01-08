@@ -622,25 +622,27 @@ func buildNetworkResource(nw *libnetwork.Network) networktypes.Inspect {
 	if nw == nil {
 		return networktypes.Inspect{}
 	}
-
+	freeV4IPs, _ := nw.FreeIPs()
+	//freeV4IPs := uint64(4)
 	return networktypes.Inspect{
-		Name:       nw.Name(),
-		ID:         nw.ID(),
-		Created:    nw.Created(),
-		Scope:      nw.Scope(),
-		Driver:     nw.Type(),
-		EnableIPv4: nw.IPv4Enabled(),
-		EnableIPv6: nw.IPv6Enabled(),
-		IPAM:       buildIPAMResources(nw),
-		Internal:   nw.Internal(),
-		Attachable: nw.Attachable(),
-		Ingress:    nw.Ingress(),
-		ConfigFrom: networktypes.ConfigReference{Network: nw.ConfigFrom()},
-		ConfigOnly: nw.ConfigOnly(),
-		Containers: map[string]networktypes.EndpointResource{},
-		Options:    nw.DriverOptions(),
-		Labels:     nw.Labels(),
-		Peers:      buildPeerInfoResources(nw.Peers()),
+		Name:         nw.Name(),
+		ID:           nw.ID(),
+		Created:      nw.Created(),
+		Scope:        nw.Scope(),
+		Driver:       nw.Type(),
+		EnableIPv4:   nw.IPv4Enabled(),
+		EnableIPv6:   nw.IPv6Enabled(),
+		AvailableIPs: freeV4IPs,
+		IPAM:         buildIPAMResources(nw),
+		Internal:     nw.Internal(),
+		Attachable:   nw.Attachable(),
+		Ingress:      nw.Ingress(),
+		ConfigFrom:   networktypes.ConfigReference{Network: nw.ConfigFrom()},
+		ConfigOnly:   nw.ConfigOnly(),
+		Containers:   map[string]networktypes.EndpointResource{},
+		Options:      nw.DriverOptions(),
+		Labels:       nw.Labels(),
+		Peers:        buildPeerInfoResources(nw.Peers()),
 	}
 }
 

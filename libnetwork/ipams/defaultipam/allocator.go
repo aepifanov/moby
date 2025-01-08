@@ -339,3 +339,20 @@ func getAddress(base netip.Prefix, bitmask *bitmap.Bitmap, prefAddress netip.Add
 func (a *Allocator) IsBuiltIn() bool {
 	return true
 }
+
+func (a *Allocator) GetFreeIPsCnt(poolID string) (freeIPv4Cnt uint64, err error) {
+	log.G(context.TODO()).Debugf("GetFreeIPsCnt(%s)", poolID)
+	k, err := PoolIDFromString(poolID)
+	if err != nil {
+		return 0, types.InvalidParameterErrorf("invalid pool id: %s", poolID)
+	}
+
+	aSpace, err := a.getAddrSpace(k.AddressSpace, k.Is6())
+	if err != nil {
+		return 0, err
+	}
+
+	aSpace.mu.Lock()
+	defer aSpace.mu.Unlock()
+	return aSpace.subnets[k.Subnet].addrs.Unselected(), nil
+}

@@ -1,6 +1,8 @@
 package convert // import "github.com/docker/docker/daemon/cluster/convert"
 
 import (
+	"math"
+	"net/netip"
 	"strings"
 
 	"github.com/docker/docker/api/types/network"
@@ -156,16 +158,23 @@ func BasicNetworkFromGRPC(n swarmapi.Network) network.Inspect {
 		}
 	}
 
+	ips := uint64(0)
+	for _, ic := range ipam.Config {
+		subnet, _ := netip.ParsePrefix(ic.Subnet)
+		ips += uint64(math.Pow(2, float64(32-subnet.Bits())) - 3)
+	}
+
 	nr := network.Inspect{
-		ID:         n.ID,
-		Name:       n.Spec.Annotations.Name,
-		Scope:      scope.Swarm,
-		EnableIPv6: spec.Ipv6Enabled,
-		IPAM:       ipam,
-		Internal:   spec.Internal,
-		Attachable: spec.Attachable,
-		Ingress:    IsIngressNetwork(&n),
-		Labels:     n.Spec.Annotations.Labels,
+		ID:           n.ID,
+		Name:         n.Spec.Annotations.Name,
+		Scope:        scope.Swarm,
+		EnableIPv6:   spec.Ipv6Enabled,
+		IPAM:         ipam,
+		Internal:     spec.Internal,
+		AvailableIPs: ips,
+		Attachable:   spec.Attachable,
+		Ingress:      IsIngressNetwork(&n),
+		Labels:       n.Spec.Annotations.Labels,
 	}
 	nr.Created, _ = gogotypes.TimestampFromProto(n.Meta.CreatedAt)
 

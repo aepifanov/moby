@@ -1850,6 +1850,29 @@ func (n *Network) IPv6Enabled() bool {
 	return n.enableIPv6
 }
 
+func (n *Network) FreeIPs() (freeIPs uint64, err error) {
+
+	if n.hasSpecialDriver() {
+		return 0, nil
+	}
+
+	ipam, _, err := n.getController().getIPAMDriver(n.ipamType)
+	if err != nil {
+		return 0, err
+	}
+
+	ipamInfos, _ := n.IpamInfo()
+	for _, ipamInfo := range ipamInfos {
+		ips, err := ipam.GetFreeIPsCnt(ipamInfo.PoolID)
+		freeIPs += ips
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return freeIPs, nil
+}
+
 func (n *Network) ConfigFrom() string {
 	n.mu.Lock()
 	defer n.mu.Unlock()

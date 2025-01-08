@@ -55,6 +55,9 @@ type Ipam interface {
 
 	// IsBuiltIn returns true if it is a built-in driver.
 	IsBuiltIn() bool
+
+	// GetFreeIPsCnt returns the number of free IPs in the pool for IPv4 and IPv6
+	GetFreeIPsCnt(poolID string) (uint64, error)
 }
 
 type PoolRequest struct {

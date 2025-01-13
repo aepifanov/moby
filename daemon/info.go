@@ -93,6 +93,11 @@ func (daemon *Daemon) SystemInfo(ctx context.Context) (*system.Info, error) {
 	daemon.fillLicense(v)
 	daemon.fillDefaultAddressPools(ctx, v, &cfg.Config)
 
+	// Docker EE specific:
+
+	// security options and labels
+	daemon.fillSecurityLabels(v, sysInfo)
+
 	return v, nil
 }
 

@@ -41,7 +41,7 @@ type stateBackend interface {
 	ContainerRm(name string, config *backend.ContainerRmConfig) error
 	ContainerStart(ctx context.Context, name string, hostConfig *container.HostConfig, checkpoint string, checkpointDir string) error
 	ContainerStop(ctx context.Context, name string, options container.StopOptions) error
-	ContainerUnpause(name string) error
+	ContainerUnpause(ctx context.Context, name string) error
 	ContainerUpdate(name string, hostConfig *container.HostConfig) (container.ContainerUpdateOKBody, error)
 	ContainerWait(ctx context.Context, name string, condition containerpkg.WaitCondition) (<-chan containerpkg.StateStatus, error)
 }

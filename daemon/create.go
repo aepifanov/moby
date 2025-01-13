@@ -28,6 +28,7 @@ import (
 )
 
 type createOpts struct {
+	verifyImageSigned       bool
 	params                  backend.ContainerCreateConfig
 	managed                 bool
 	ignoreImagesArgsEscaped bool
@@ -44,7 +45,8 @@ func (daemon *Daemon) CreateManagedContainer(ctx context.Context, params backend
 // ContainerCreate creates a regular container
 func (daemon *Daemon) ContainerCreate(ctx context.Context, params backend.ContainerCreateConfig) (containertypes.CreateResponse, error) {
 	return daemon.containerCreate(ctx, daemon.config(), createOpts{
-		params: params,
+		verifyImageSigned: true,
+		params:            params,
 	})
 }
 
@@ -52,6 +54,7 @@ func (daemon *Daemon) ContainerCreate(ctx context.Context, params backend.Contai
 // and ensures that we do not take the images ArgsEscaped
 func (daemon *Daemon) ContainerCreateIgnoreImagesArgsEscaped(ctx context.Context, params backend.ContainerCreateConfig) (containertypes.CreateResponse, error) {
 	return daemon.containerCreate(ctx, daemon.config(), createOpts{
+		verifyImageSigned:       true,
 		params:                  params,
 		ignoreImagesArgsEscaped: true,
 	})
@@ -75,6 +78,12 @@ func (daemon *Daemon) containerCreate(ctx context.Context, daemonCfg *configStor
 	if opts.params.HostConfig != nil && opts.params.HostConfig.RestartPolicy.Name == "" {
 		// Set the default restart-policy ("none") if no restart-policy was set.
 		opts.params.HostConfig.RestartPolicy.Name = containertypes.RestartPolicyDisabled
+	}
+	if opts.verifyImageSigned {
+		// content trust verification is called from here, because (swarm-)managed containers are not verified.
+		if err := daemon.verifyImageSigned(ctx, daemonCfg, opts.params.Config.Image); err != nil {
+			return containertypes.CreateResponse{}, err
+		}
 	}
 
 	warnings, err := daemon.verifyContainerSettings(daemonCfg, opts.params.HostConfig, opts.params.Config, false)

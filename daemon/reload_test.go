@@ -8,6 +8,7 @@ import (
 	"github.com/containerd/log"
 	"github.com/docker/docker/daemon/config"
 	"github.com/docker/docker/daemon/images"
+	"github.com/docker/docker/daemon/trust"
 	"github.com/docker/docker/libnetwork"
 	"github.com/docker/docker/registry"
 	"gotest.tools/v3/assert"
@@ -409,4 +410,68 @@ func TestDaemonReloadNetworkDiagnosticPort(t *testing.T) {
 	if !daemon.netController.IsDiagnosticEnabled() {
 		t.Fatalf("diagnostic should be enable")
 	}
+}
+
+func TestContentTrustReload(t *testing.T) {
+	muteLogs(t)
+	rootKeys := map[string][]string{
+		"my.registry.io/myorg/repo": {"keyid1", "keyid2"},
+		"my.registry.io/otherorg/*": {"keyid2"},
+	}
+	daemon := newDaemonForReloadT(t, &config.Config{
+		CommonConfig: config.CommonConfig{
+			ContentTrust: &config.ContentTrust{
+				TrustPinning: config.TrustPinning{
+					OfficialLibraryImages: false,
+					RootKeys:              rootKeys,
+				},
+				Mode: config.TrustModeDisabled,
+			},
+		},
+	})
+
+	// test TrustModeDisabled
+	assert.Check(t, is.Equal(trust.Mode(daemon.config().ContentTrust), config.TrustModeDisabled))
+
+	// test changing existing content-trust setting and TrustModeEnforced
+	newRootKeys := map[string][]string{
+		"new.registry.io/myorg/repo": {"newkeyid1", "newkeyid2"},
+		"new.registry.io/otherorg/*": {"newkeyid2"},
+	}
+	newContentTrust := config.ContentTrust{
+		TrustPinning: config.TrustPinning{
+			OfficialLibraryImages: false,
+			RootKeys:              newRootKeys,
+		},
+		Mode: config.TrustModeEnforced,
+	}
+	newConfig := &config.Config{
+		CommonConfig: config.CommonConfig{
+			ContentTrust: &newContentTrust,
+		},
+	}
+	assert.Assert(t, daemon.Reload(newConfig))
+	c := daemon.config().ContentTrust
+	assert.Check(t, is.DeepEqual(c, &newContentTrust))
+	assert.Check(t, is.Equal(trust.Mode(c), config.TrustModeEnforced))
+
+	// test removing content-trust setting
+	nilConfig := &config.Config{
+		CommonConfig: config.CommonConfig{
+			ContentTrust: nil,
+		},
+	}
+	assert.Assert(t, daemon.Reload(nilConfig))
+	c = daemon.config().ContentTrust
+	assert.Check(t, is.Nil(c))
+	assert.Check(t, is.Equal(trust.Mode(c), config.TrustModeDisabled))
+
+	// test adding content-trust setting and TrustModePermissive
+	newConfig.ContentTrust.Mode = config.TrustModePermissive
+	if err := daemon.Reload(newConfig); err != nil {
+		t.Fatal(err)
+	}
+	c = daemon.config().ContentTrust
+	assert.Check(t, is.DeepEqual(c, &newContentTrust))
+	assert.Check(t, is.Equal(trust.Mode(c), config.TrustModePermissive))
 }

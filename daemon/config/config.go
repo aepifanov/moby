@@ -77,6 +77,7 @@ var flatOptions = map[string]bool{
 	"runtimes":             true,
 	"default-ulimits":      true,
 	"features":             true,
+	"content-trust":        true,
 	"builder":              true,
 }
 
@@ -88,6 +89,7 @@ var skipValidateOptions = map[string]bool{
 	"builder":  true,
 	// Corresponding flag has been removed because it was already unusable
 	"deprecated-key-path": true,
+	"content-trust":       true,
 }
 
 // skipDuplicates contains configuration keys that
@@ -147,6 +149,11 @@ type DNSConfig struct {
 // It includes json tags to deserialize configuration from a file
 // using the same names that the flags in the command line use.
 type CommonConfig struct {
+	// ContentTrust determines whether engine signing verification should be
+	// enabled, and if so, how it should be configured. This field is ee-specific.
+
+	ContentTrust *ContentTrust `json:"content-trust,omitempty"`
+
 	AuthorizationPlugins  []string `json:"authorization-plugins,omitempty"` // AuthorizationPlugins holds list of authorization plugins
 	AutoRestart           bool     `json:"-"`
 	DisableBridge         bool     `json:"-"`
@@ -681,6 +688,9 @@ func Validate(config *Config) error {
 		if _, err := opts.ValidateHost(h); err != nil {
 			return err
 		}
+	}
+	if err := ValidateContentTrust(config.ContentTrust); err != nil {
+		return err
 	}
 
 	// validate platform-specific settings

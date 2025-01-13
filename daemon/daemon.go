@@ -48,6 +48,7 @@ import (
 	"github.com/docker/docker/daemon/network"
 	"github.com/docker/docker/daemon/snapshotter"
 	"github.com/docker/docker/daemon/stats"
+	"github.com/docker/docker/daemon/trust"
 	"github.com/docker/docker/distribution"
 	dmetadata "github.com/docker/docker/distribution/metadata"
 	"github.com/docker/docker/dockerversion"
@@ -146,6 +147,8 @@ type Daemon struct {
 	mdDB *bbolt.DB
 
 	usesSnapshotter bool
+
+	trustService *trust.Service
 }
 
 // ID returns the daemon id
@@ -922,6 +925,11 @@ func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.S
 		}
 	}
 
+	d.trustService = &trust.Service{
+		TrustCachePath:  filepath.Join(cfgStore.Root, "trustcache"),
+		RegistryService: registryService,
+	}
+
 	d.registryService = registryService
 	dlogger.RegisterPluginGetter(d.PluginStore)
 
@@ -1193,6 +1201,20 @@ func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.S
 		log.G(ctx).Debugf("Max Concurrent Downloads: %d", imgSvcConfig.MaxConcurrentDownloads)
 		log.G(ctx).Debugf("Max Concurrent Uploads: %d", imgSvcConfig.MaxConcurrentUploads)
 		log.G(ctx).Debugf("Max Download Attempts: %d", imgSvcConfig.MaxDownloadAttempts)
+	}
+
+	trustedImageSvc := TrustedImageService{
+		Daemon:       d,
+		ImageService: d.imageService,
+		TrustService: d.trustService,
+	}
+	if la, ok := d.imageService.(layerAccessor); ok {
+		d.imageService = &struct {
+			TrustedImageService
+			layerAccessor
+		}{trustedImageSvc, la}
+	} else {
+		d.imageService = &trustedImageSvc
 	}
 
 	go d.execCommandGC()

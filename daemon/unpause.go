@@ -10,11 +10,20 @@ import (
 )
 
 // ContainerUnpause unpauses a container
-func (daemon *Daemon) ContainerUnpause(name string) error {
+func (daemon *Daemon) ContainerUnpause(ctx context.Context, name string) error {
 	ctr, err := daemon.GetContainer(name)
 	if err != nil {
 		return err
 	}
+
+	// Verify signature if trust service is not nil or disabled
+	// There is no TrustedContainerUnpause method as there is for ContainerStart
+	// because the only thing that calls ContainerUnpause is the API, where we want
+	// the trust check to happen.
+	if err := daemon.verifyImageSigned(ctx, daemon.config(), ctr.ImageID.String()); err != nil {
+		return err
+	}
+
 	return daemon.containerUnpause(ctr)
 }
 

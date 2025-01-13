@@ -327,7 +327,7 @@ func (s *containerRouter) postContainersUnpause(ctx context.Context, w http.Resp
 		return err
 	}
 
-	if err := s.backend.ContainerUnpause(vars["name"]); err != nil {
+	if err := s.backend.ContainerUnpause(ctx, vars["name"]); err != nil {
 		return err
 	}
 

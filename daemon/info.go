@@ -96,7 +96,8 @@ func (daemon *Daemon) SystemInfo(ctx context.Context) (*system.Info, error) {
 	// Docker EE specific:
 
 	// security options and labels
-	daemon.fillSecurityLabels(v, sysInfo)
+	daemon.fillSecurityLabels(v, sysInfo, &cfg.Config)
+	daemon.fillContentTrust(v, &cfg.Config)
 
 	return v, nil
 }
@@ -151,6 +152,13 @@ func (daemon *Daemon) SystemVersion(ctx context.Context) (types.Version, error) 
 		return v, err
 	}
 	return v, nil
+}
+
+func (daemon *Daemon) fillContentTrust(v *system.Info, cfg *config.Config) {
+	// Only warnings may be added as to not change the API.
+	if cfg.ContentTrust != nil && cfg.ContentTrust.Mode == config.TrustModePermissive {
+		v.Warnings = append(v.Warnings, "WARNING: Content Trust Mode is set to permissive. See warnings for failed verifications in daemon logs")
+	}
 }
 
 func (daemon *Daemon) fillDriverInfo(v *system.Info) {

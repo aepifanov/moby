@@ -2,12 +2,14 @@ package daemon
 
 import (
 	"github.com/docker/docker/api/types/system"
+	"github.com/docker/docker/daemon/config"
+	"github.com/docker/docker/daemon/trust"
 	"github.com/docker/docker/pkg/sysinfo"
 	"github.com/opencontainers/selinux/go-selinux"
 )
 
 // fillSecurityLabels adds Docker EE specific labels and options to info
-func (daemon *Daemon) fillSecurityLabels(v *system.Info, sysInfo *sysinfo.SysInfo) {
+func (daemon *Daemon) fillSecurityLabels(v *system.Info, sysInfo *sysinfo.SysInfo, cfg *config.Config) {
 	labels := v.Labels
 
 	if sysInfo.AppArmor {
@@ -23,5 +25,6 @@ func (daemon *Daemon) fillSecurityLabels(v *system.Info, sysInfo *sysinfo.SysInf
 	if rootIDs.UID != 0 || rootIDs.GID != 0 {
 		labels = append(labels, "com.docker.security.userns=enabled")
 	}
+	labels = append(labels, "com.docker.content-trust.mode="+string(trust.Mode(cfg.ContentTrust)))
 	v.Labels = labels
 }

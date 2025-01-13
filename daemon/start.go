@@ -100,6 +100,20 @@ func (daemon *Daemon) ContainerStart(ctx context.Context, name string, hostConfi
 			return errdefs.InvalidParameter(err)
 		}
 	}
+
+	// if the trust service is not nil, that means that the content trust object
+	// is not nil a trust service would have been created by NewDaemon
+	if daemon.trustService != nil {
+		ctr, err := daemon.GetContainer(name)
+		if err != nil {
+			return err
+		}
+		// pull the image ID out of the container
+		// verify the image first
+		if err := daemon.verifyImageSigned(ctx, daemonCfg, ctr.ImageID.String()); err != nil {
+			return err
+		}
+	}
 	return daemon.containerStart(ctx, daemonCfg, ctr, checkpoint, checkpointDir, true)
 }
 

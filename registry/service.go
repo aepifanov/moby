@@ -110,6 +110,11 @@ type APIEndpoint struct {
 	TLSConfig                      *tls.Config
 }
 
+// TLSConfig constructs a client TLS configuration based on server defaults. Needed for EE Trust.
+func (s *Service) TLSConfig(hostname string) (*tls.Config, error) {
+	return newTLSConfig(hostname, s.config.isSecureIndex(hostname))
+}
+
 // LookupPullEndpoints creates a list of v2 endpoints to try to pull from, in order of preference.
 // It gives preference to mirrors over the actual registry, and HTTPS over plain HTTP.
 func (s *Service) LookupPullEndpoints(hostname string) (endpoints []APIEndpoint, err error) {

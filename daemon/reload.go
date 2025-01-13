@@ -71,6 +71,7 @@ func (tx *reloadTxn) Rollback() error {
 // - Insecure registries
 // - Registry mirrors
 // - Daemon live restore
+// - Content trust
 func (daemon *Daemon) Reload(conf *config.Config) error {
 	daemon.configReload.Lock()
 	defer daemon.configReload.Unlock()
@@ -106,6 +107,7 @@ func (daemon *Daemon) Reload(conf *config.Config) error {
 		daemon.reloadRegistryConfig,
 		daemon.reloadLiveRestore,
 		daemon.reloadNetworkDiagnosticPort,
+		daemon.reloadContentTrust,
 	} {
 		if err := reload(&txn, newCfg, conf, attributes); err != nil {
 			if rollbackErr := txn.Rollback(); rollbackErr != nil {
@@ -295,5 +297,17 @@ func (daemon *Daemon) reloadFeatures(txn *reloadTxn, newCfg *configStore, conf *
 
 	// prepare reload event attributes with updatable configurations
 	attributes["features"] = fmt.Sprintf("%v", newCfg.Features)
+	return nil
+}
+
+// reloadContentTrust updates content-trust configuration if applicable
+func (daemon *Daemon) reloadContentTrust(txn *reloadTxn, newCfg *configStore, conf *config.Config, attributes map[string]string) error {
+	if err := config.ValidateContentTrust(conf.ContentTrust); err != nil {
+		return err
+	}
+
+	newCfg.ContentTrust = conf.ContentTrust
+
+	attributes["content-trust"] = fmt.Sprintf("%v", newCfg.ContentTrust)
 	return nil
 }

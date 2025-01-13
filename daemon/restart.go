@@ -21,7 +21,17 @@ func (daemon *Daemon) ContainerRestart(ctx context.Context, name string, options
 	if err != nil {
 		return err
 	}
-	err = daemon.containerRestart(ctx, daemon.config(), ctr, options)
+	// Verify signature if trust service is not nil or disabled
+	// There is no TrustedContainerRestart method as there is for ContainerStart
+	// because the only thing that calls ContainerRestart is the API, where we want
+	// the trust check to happen.
+	//
+	// Pull the image ID out of the container and verify it is signed first
+	cfg := daemon.config()
+	if err := daemon.verifyImageSigned(ctx, cfg, ctr.ImageID.String()); err != nil {
+		return err
+	}
+	err = daemon.containerRestart(ctx, cfg, ctr, options)
 	if err != nil {
 		return fmt.Errorf("Cannot restart container %s: %v", name, err)
 	}

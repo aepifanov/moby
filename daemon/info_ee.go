@@ -8,6 +8,10 @@ import (
 	"github.com/opencontainers/selinux/go-selinux"
 )
 
+func (daemon *Daemon) TrustMode() config.TrustMode {
+	return trust.Mode(daemon.config().Config.ContentTrust)
+}
+
 // fillSecurityLabels adds Docker EE specific labels and options to info
 func (daemon *Daemon) fillSecurityLabels(v *system.Info, sysInfo *sysinfo.SysInfo, cfg *config.Config) {
 	labels := v.Labels

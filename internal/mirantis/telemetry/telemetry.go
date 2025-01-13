@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/daemon/cluster"
+	"github.com/docker/docker/daemon/config"
 	"github.com/docker/docker/dockerversion"
 	"github.com/segmentio/analytics-go/v3"
 )
@@ -40,6 +41,7 @@ type Telemetry struct {
 }
 
 type sysInfo interface {
+	TrustMode() config.TrustMode
 	SystemInfo(context.Context) (*system.Info, error)
 	Features() map[string]bool
 }
@@ -136,6 +138,7 @@ func (t *Telemetry) Send(ctx context.Context) {
 		"image_count":             info.Images,
 		"product_license":         info.ProductLicense,
 		"security_options":        strings.Join(info.SecurityOptions, ","),
+		"trust_mode":              t.s.TrustMode(),
 	}
 	if t.c != nil && (t.c.IsAgent() || t.c.IsManager()) {
 		swarmInfo, err := t.c.Inspect()

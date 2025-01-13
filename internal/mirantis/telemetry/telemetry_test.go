@@ -11,6 +11,7 @@ import (
 	"github.com/containerd/log"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/system"
+	"github.com/docker/docker/daemon/config"
 	"github.com/docker/docker/dockerversion"
 	"github.com/segmentio/analytics-go/v3"
 	"github.com/sirupsen/logrus"
@@ -19,8 +20,9 @@ import (
 )
 
 type mockInfoSource struct {
-	sysInfoCB func() (*system.Info, error)
-	features  map[string]bool
+	sysInfoCB      func() (*system.Info, error)
+	getTrustModeCB func() config.TrustMode
+	features       map[string]bool
 }
 
 func (m mockInfoSource) SystemInfo(context.Context) (*system.Info, error) {
@@ -28,6 +30,13 @@ func (m mockInfoSource) SystemInfo(context.Context) (*system.Info, error) {
 		return nil, errors.New("sysInfoCB not set in test")
 	}
 	return m.sysInfoCB()
+}
+
+func (m mockInfoSource) TrustMode() config.TrustMode {
+	if m.getTrustModeCB == nil {
+		return ""
+	}
+	return m.getTrustModeCB()
 }
 
 func (m mockInfoSource) Features() map[string]bool {
@@ -87,6 +96,7 @@ func (h testingLogrusHook) Fire(entry *logrus.Entry) error {
 func TestTelemetryHappyPath(t *testing.T) {
 	pollPeriod = 5 * time.Millisecond
 	ticker := time.NewTicker(pollPeriod)
+	trustMode := config.TrustMode("test")
 	info := &system.Info{
 		Architecture:       "architecture",
 		Driver:             "driver",
@@ -124,6 +134,7 @@ func TestTelemetryHappyPath(t *testing.T) {
 		"image_count":             info.Images,
 		"product_license":         info.ProductLicense,
 		"security_options":        strings.Join(info.SecurityOptions, ","),
+		"trust_mode":              trustMode,
 	}
 	var actual analytics.Message
 
@@ -138,6 +149,9 @@ func TestTelemetryHappyPath(t *testing.T) {
 		s: mockInfoSource{
 			sysInfoCB: func() (*system.Info, error) {
 				return info, nil
+			},
+			getTrustModeCB: func() config.TrustMode {
+				return trustMode
 			},
 		},
 		ticker: ticker,

@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/dockerversion"
 	"github.com/segmentio/analytics-go/v3"
 	"github.com/sirupsen/logrus"
+	logtest "github.com/sirupsen/logrus/hooks/test"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
 )
@@ -250,6 +251,99 @@ func TestSwarmClusterID(t *testing.T) {
 			if assert.Check(t, is.Equal(ok, tt.expectTrait)) && tt.expectTrait {
 				assert.Check(t, is.Equal(clusterIDTrait, tt.expectedValue))
 			}
+		})
+	}
+}
+
+func TestTelemetryValidLicense(t *testing.T) {
+	sentTelemetry := false
+
+	tel := &Telemetry{
+		s: mockInfoSource{
+			sysInfoCB: func() (*system.Info, error) {
+				return &system.Info{
+					LicenseStatus: system.LicenseStatusValid,
+				}, nil
+			},
+			getTrustModeCB: func() config.TrustMode {
+				return config.TrustMode("test")
+			},
+			features: map[string]bool{
+				"telemetry": false,
+			},
+		},
+		client: &testClient{
+			segmentCB: func(analytics.Message) error {
+				sentTelemetry = true
+				return nil
+			},
+		},
+	}
+
+	// now run the telemetry client
+	logger := logrus.New()
+	logger.SetOutput(io.Discard)
+	logger.SetLevel(logrus.TraceLevel)
+	logger.AddHook(testingLogrusHook{t})
+	tel.Send(log.WithLogger(context.Background(), logrus.NewEntry(logger)))
+	assert.Check(t, !sentTelemetry, "sent telemetry, but should not have")
+}
+
+// TestTelemetryForceEnabled tests that, under a variety of invalid license
+// states, that telemetry is forcefully enabled and messages are sent.
+func TestTelemetryForceEnabled(t *testing.T) {
+	for name, tc := range map[string]*system.Info{
+		"InvalidLicense": &system.Info{
+			LicenseStatus: system.LicenseStatusInvalid,
+		},
+		"ExpiredLicense": &system.Info{
+			LicenseStatus: system.LicenseStatusExpired,
+		},
+		"PrematureLicense": &system.Info{
+			LicenseStatus: system.LicenseStatusNotValidYet,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			sentTelemetry := false
+			tel := &Telemetry{
+				s: mockInfoSource{
+					sysInfoCB: func() (*system.Info, error) {
+						return tc, nil
+					},
+					getTrustModeCB: func() config.TrustMode {
+						return config.TrustMode("test")
+					},
+					features: map[string]bool{
+						"telemetry": false,
+					},
+				},
+				client: &testClient{
+					segmentCB: func(analytics.Message) error {
+						sentTelemetry = true
+						return nil
+					},
+				},
+			}
+
+			// part of the acceptance for this is that a message is logged. We can
+			// install the log test hook to get log messages, to check that we got the
+			// message we're expecting.
+			testLogger, testHook := logtest.NewNullLogger()
+			testLogger.SetLevel(logrus.TraceLevel)
+			testLogger.AddHook(testingLogrusHook{t})
+			ctx := log.WithLogger(context.Background(), testLogger.WithField("test", t.Name()))
+
+			tel.Send(ctx)
+			assert.Check(t, sentTelemetry, "did not send telemetry, but should have")
+			didLog := false
+			for _, msg := range testHook.AllEntries() {
+				// no idea how we'd get a nil entry, but these are pointers so
+				// I guess we'll play it safe.
+				if msg != nil && strings.Contains(msg.Message, "cannot be disabled") {
+					didLog = true
+				}
+			}
+			assert.Check(t, didLog, "did not log an error for user but should have")
 		})
 	}
 }

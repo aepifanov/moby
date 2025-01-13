@@ -74,6 +74,7 @@ type Info struct {
 	ProductLicense      string               `json:",omitempty"`
 	MirantisLicenseSubj string               `json:"-"`
 	MirantisLicenseSrc  string               `json:"-"`
+	LicenseStatus       LicenseStatus        `json:"-"`
 	DefaultAddressPools []NetworkAddressPool `json:",omitempty"`
 	CDISpecDirs         []string
 
@@ -116,3 +117,23 @@ type NetworkAddressPool struct {
 	Base string
 	Size int
 }
+
+// LicenseStatus denotes the status of a license for this MCR system.
+type LicenseStatus string
+
+const (
+	// LicenseStatusValid means the license is valid and unexpired
+	LicenseStatusValid LicenseStatus = "Valid"
+	// LicenseStatusExpired means the license expiration is before the current
+	// time
+	LicenseStatusExpired LicenseStatus = "Expired"
+	// LicenseStatusNotValidYet means the license NotBefore is after the
+	// current time
+	LicenseStatusNotValidYet LicenseStatus = "Premature"
+	// LicenseStatusWorker means the system is a Swarm Worker node. The license
+	// for such a system is part of and present on the Manager of the cluster.
+	LicenseStatusWorker LicenseStatus = "Worker"
+	// LicenseStatusInvalid means the license is for any reason not otherwise
+	// specified, invalid.
+	LicenseStatusInvalid LicenseStatus = "Invalid"
+)

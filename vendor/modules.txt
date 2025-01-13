@@ -1056,6 +1056,7 @@ github.com/shibumi/go-pathspec
 # github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
+github.com/sirupsen/logrus/hooks/test
 # github.com/spdx/tools-golang v0.5.1
 ## explicit; go 1.13
 github.com/spdx/tools-golang/convert

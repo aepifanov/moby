@@ -116,7 +116,20 @@ func (t *Telemetry) Send(ctx context.Context) {
 	enabled := !ok || e
 
 	if !enabled {
-		return
+		switch info.LicenseStatus {
+		case system.LicenseStatusInvalid:
+			g(ctx).Error("No valid product license. Telemetry cannot be disabled without a valid product license.")
+		case system.LicenseStatusExpired:
+			g(ctx).Error(
+				"License has expired. Telemetry cannot be disabled without a valid product license.",
+			)
+		case system.LicenseStatusNotValidYet:
+			g(ctx).Error(
+				"License not yet valid. Telemetry cannot be disabled without a valid product license.",
+			)
+		default:
+			return
+		}
 	}
 
 	traits := analytics.Traits{

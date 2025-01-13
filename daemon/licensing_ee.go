@@ -102,9 +102,16 @@ func (c MirantisLicenseClaims) String() string {
 // fillLicense populates the product license field(s) in the provided info
 // type based on the available licensing.
 func (daemon *Daemon) fillLicense(v *system.Info) {
+	// Assume the license is invalid until proven otherwise.
+	v.LicenseStatus = system.LicenseStatusInvalid
 	v.ProductLicense = dockerversion.DefaultProductLicense
 	if v.ProductLicense == "" {
 		v.ProductLicense = defaultLicense
+	} else {
+		// For our purposes, we're going to assume that if a default license is
+		// filled, then the license is valid. I don't think we have any case
+		// where the DefaultProductLicense is present but invalid.
+		v.LicenseStatus = system.LicenseStatusValid
 	}
 	v.MirantisLicenseSubj = ""
 
@@ -116,6 +123,7 @@ func (daemon *Daemon) fillLicense(v *system.Info) {
 	if c != nil && c.IsAgent() {
 		if !c.IsManager() {
 			v.ProductLicense = workerNodeLicense
+			v.LicenseStatus = system.LicenseStatusWorker
 			return
 		}
 		loaders = append(loaders, loadLicenseCluster(c))
@@ -191,6 +199,19 @@ func fillEnterpriseLicenseMirantis(lic loadedLicense, v *system.Info) error {
 	v.ProductLicense = claims.String()
 	v.MirantisLicenseSubj = claims.Subject
 	v.MirantisLicenseSrc = lic.source
+
+	verr := claims.Validate(jwt.Expected{Time: time.Now()})
+	switch {
+	case verr == nil:
+		v.LicenseStatus = system.LicenseStatusValid
+	case errors.Is(verr, jwt.ErrExpired):
+		v.LicenseStatus = system.LicenseStatusExpired
+	case errors.Is(verr, jwt.ErrNotValidYet):
+		v.LicenseStatus = system.LicenseStatusNotValidYet
+	default:
+		// License is invalid for some other unknown reason
+		v.LicenseStatus = system.LicenseStatusInvalid
+	}
 
 	return nil
 }

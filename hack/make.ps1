@@ -175,7 +175,6 @@ Function Get-UpstreamCommit() {
 Function Execute-Build($type, $additionalBuildTags, $directory, $ldflags) {
     # Generate the build flags
     $buildTags = ""
-    $ldflags = "-linkmode=internal " + $ldflags
     if ($Noisy)                     { $verboseParm=" -v" }
     if ($Race)                      { Write-Warning "Using race detector"; $raceParm=" -race"}
     if ($ForceBuildAll)             { $allParm=" -a" }
@@ -185,6 +184,10 @@ Function Execute-Build($type, $additionalBuildTags, $directory, $ldflags) {
     # Do the go build in the appropriate directory
     # Note -linkmode=internal is required to be able to debug on Windows.
     # https://github.com/golang/go/issues/14319#issuecomment-189576638
+    # This issue is fixed with 1.16 golang. So, this flag is removed from 
+    # below command.
+    # -linkmode=internal conflicts with fipster that requires CGO_ENABLED
+    # https://github.com/golang/go/issues/38918
     Write-Host "INFO: Building $type..."
     Push-Location $root\cmd\$directory; $global:pushed=$True
     $buildCommand = "go build" + `
@@ -461,8 +464,14 @@ Try {
     # Verify GOPATH is set
     if ($env:GOPATH.Length -eq 0) { Throw "Missing GOPATH environment variable. See https://pkg.go.dev/cmd/go#hdr-GOPATH_environment_variable" }
 
-    # Run autogen if building daemon.
-    if ($Daemon) {
+    # Ensure module support is disabled
+    $env:GO111MODULE = 'off'
+
+    # Ensure CGO_ENABLED support is enabled for fipster. 
+    $env:CGO_ENABLED = 1
+
+    # Run autogen if building binaries or running unit tests.
+    if ($Client -or $Daemon -or $TestUnit) {
         Write-Host "INFO: Invoking autogen..."
         Try { .\hack\make\.go-autogen.ps1 -CommitString $gitCommit -DockerVersion $dockerVersion -Platform "$env:PLATFORM" -Product "$env:PRODUCT" -PackagerName "$env:PACKAGER_NAME" }
         Catch [Exception] { Throw $_ }

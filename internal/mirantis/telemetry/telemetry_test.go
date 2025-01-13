@@ -112,7 +112,7 @@ func TestTelemetryHappyPath(t *testing.T) {
 		Containers:         42,
 		Images:             84,
 		ProductLicense:     "subject test",
-		SecurityOptions:    []string{"name=test"},
+		SecurityOptions:    []string{"name=test", "name=selinux", "name=fips"},
 	}
 	expectedTraits := analytics.Traits{
 		"architecture":            info.Architecture,
@@ -132,6 +132,7 @@ func TestTelemetryHappyPath(t *testing.T) {
 		"container_count":         info.Containers,
 		"container_count_running": info.ContainersRunning,
 		"image_count":             info.Images,
+		"fips_enabled":            true,
 		"product_license":         info.ProductLicense,
 		"security_options":        strings.Join(info.SecurityOptions, ","),
 		"trust_mode":              trustMode,

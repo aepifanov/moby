@@ -61,6 +61,8 @@ type nodeStartConfig struct {
 	// JoinInProgress is set to true if a join operation has started, but
 	// not completed yet.
 	JoinInProgress bool
+	// FIPS should be true if the backend (daemon) has fipsEnabled
+	FIPS bool
 
 	joinAddr        string
 	forceNewCluster bool
@@ -145,6 +147,7 @@ func (n *nodeRunner) start(conf nodeStartConfig) error {
 		UnlockKey:        conf.lockKey,
 		AutoLockManagers: conf.autolock,
 		PluginGetter:     n.cluster.config.Backend.PluginGetter(),
+		FIPS:             conf.FIPS,
 	}
 	if conf.availability != "" {
 		avail, ok := swarmapi.NodeSpec_Availability_value[strings.ToUpper(string(conf.availability))]

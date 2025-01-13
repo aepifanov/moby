@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -136,6 +137,7 @@ func (t *Telemetry) Send(ctx context.Context) {
 		"container_count":         info.Containers,
 		"container_count_running": info.ContainersRunning,
 		"image_count":             info.Images,
+		"fips_enabled":            slices.Contains(info.SecurityOptions, "name=fips"),
 		"product_license":         info.ProductLicense,
 		"security_options":        strings.Join(info.SecurityOptions, ","),
 		"trust_mode":              t.s.TrustMode(),

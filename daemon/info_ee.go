@@ -29,6 +29,10 @@ func (daemon *Daemon) fillSecurityLabels(v *system.Info, sysInfo *sysinfo.SysInf
 	if rootIDs.UID != 0 || rootIDs.GID != 0 {
 		labels = append(labels, "com.docker.security.userns=enabled")
 	}
+	if daemon.fipsEnabled {
+		v.SecurityOptions = append(v.SecurityOptions, "name=fips")
+		labels = append(labels, "com.docker.security.fips=enabled")
+	}
 	labels = append(labels, "com.docker.content-trust.mode="+string(trust.Mode(cfg.ContentTrust)))
 	v.Labels = labels
 }

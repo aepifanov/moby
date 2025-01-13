@@ -67,6 +67,7 @@ type Backend interface {
 	PluginGetter() *plugin.Store
 	GetAttachmentStore() *networkSettings.AttachmentStore
 	HasExperimental() bool
+	FIPSEnabled() bool
 }
 
 // VolumeBackend is used by an executor to perform volume operations

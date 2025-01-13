@@ -85,6 +85,8 @@ import (
 	"resenje.org/singleflight"
 )
 
+var fipsEnabled = false
+
 type configStore struct {
 	config.Config
 
@@ -148,6 +150,7 @@ type Daemon struct {
 
 	usesSnapshotter bool
 
+	fipsEnabled  bool
 	trustService *trust.Service
 }
 
@@ -854,6 +857,7 @@ func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.S
 	d := &Daemon{
 		PluginStore: pluginStore,
 		startupDone: make(chan struct{}),
+		fipsEnabled: fipsEnabled,
 	}
 	cfgStore := &configStore{
 		Config:   *config,
@@ -1631,4 +1635,8 @@ func (i *imageBackend) GetRepositories(ctx context.Context, ref reference.Named,
 			RegistryService: i.registryService,
 		},
 	})
+}
+
+func (daemon *Daemon) FIPSEnabled() bool {
+	return daemon.fipsEnabled
 }

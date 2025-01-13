@@ -1,4 +1,11 @@
 #!groovy
+dockerhubCred = [
+    $class: 'UsernamePasswordMultiBinding',
+    usernameVariable: 'REGISTRY_USERNAME',
+    passwordVariable: 'REGISTRY_PASSWORD',
+    credentialsId: 'core-dockerhub-up',
+]
+
 pipeline {
     agent none
 
@@ -18,6 +25,7 @@ pipeline {
         CHECK_CONFIG_COMMIT = '33a3680e08d1007e72c3b3f1454f823d8e9948ee'
         TESTDEBUG           = '0'
         TIMEOUT             = '120m'
+        SSH_AGENT_ARGS      = 'echo -n "-v \$(dirname \$SSH_AUTH_SOCK):/opt\$(dirname \$SSH_AUTH_SOCK) -v \$WORKSPACE/known_hosts-github.com:/etc/ssh/ssh_known_hosts:ro -e SSH_AUTH_SOCK=/opt\$SSH_AUTH_SOCK"'
     }
     stages {
         stage('pr-hack') {
@@ -34,17 +42,20 @@ pipeline {
         stage('DCO-check') {
             when {
                 beforeAgent true
-                expression { params.dco }
+                expression { false }
             }
             agent { label 'arm64 && ubuntu-2004' }
             steps {
+                sshagent(['core-github-ssh-key']) {
                 sh '''
                 docker run --rm \
                   -v "$WORKSPACE:/workspace" \
+                  \$(eval "$SSH_AGENT_ARGS") \
                   -e VALIDATE_REPO=${GIT_URL} \
                   -e VALIDATE_BRANCH=${CHANGE_TARGET} \
                   alpine sh -c 'apk add --no-cache -q bash git openssh-client && git config --system --add safe.directory /workspace && cd /workspace && hack/validate/dco'
                 '''
+                }
             }
         }
         stage('Build') {
@@ -54,7 +65,7 @@ pipeline {
                         beforeAgent true
                         expression { params.arm64 }
                     }
-                    agent { label 'arm64 && ubuntu-2004' }
+                    agent { label 'arm64 && linux && ec2' }
                     environment {
                         TEST_SKIP_INTEGRATION_CLI = '1'
                     }
@@ -82,7 +93,12 @@ pipeline {
                         }
                         stage("Build dev image") {
                             steps {
-                                sh 'docker build --force-rm -t docker:${GIT_COMMIT} .'
+                              withCredentials([dockerhubCred]) {
+                                  sh '''
+                                    docker login --username "${REGISTRY_USERNAME}" --password "${REGISTRY_PASSWORD}"
+                                    docker build --force-rm --build-arg APT_MIRROR -t docker:${GIT_COMMIT} .
+                                  '''
+                              }
                             }
                         }
                         stage("Unit tests") {

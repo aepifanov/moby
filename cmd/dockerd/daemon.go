@@ -33,6 +33,7 @@ import (
 	sessionrouter "github.com/docker/docker/api/server/router/session"
 	swarmrouter "github.com/docker/docker/api/server/router/swarm"
 	systemrouter "github.com/docker/docker/api/server/router/system"
+	telemetryrouter "github.com/docker/docker/api/server/router/telemetry"
 	"github.com/docker/docker/api/server/router/volume"
 	buildkit "github.com/docker/docker/builder/builder-next"
 	"github.com/docker/docker/builder/dockerfile"
@@ -43,6 +44,7 @@ import (
 	"github.com/docker/docker/daemon/config"
 	"github.com/docker/docker/daemon/listeners"
 	"github.com/docker/docker/dockerversion"
+	"github.com/docker/docker/internal/mirantis/telemetry"
 	"github.com/docker/docker/libcontainerd/supervisor"
 	dopts "github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/authorization"
@@ -314,6 +316,9 @@ func (cli *DaemonCli) start(opts *daemonOptions) (err error) {
 
 	routerOptions.cluster = c
 
+	mirantisTelemetry := telemetry.Start(ctx, d, c)
+	routerOptions.telemetry = mirantisTelemetry
+
 	httpServer.Handler = apiServer.CreateMux(routerOptions.Build()...)
 
 	go d.ProcessClusterNotifications(ctx, c.GetWatchStream())
@@ -354,6 +359,7 @@ func (cli *DaemonCli) start(opts *daemonOptions) (err error) {
 
 	// notify systemd that we're shutting down
 	notifyStopping()
+	mirantisTelemetry.Stop()
 	shutdownDaemon(ctx, d)
 
 	if err := routerOptions.buildkit.Close(); err != nil {
@@ -395,6 +401,7 @@ type routerOptions struct {
 	buildkit       *buildkit.Builder
 	daemon         *daemon.Daemon
 	cluster        *cluster.Cluster
+	telemetry      *telemetry.Telemetry
 }
 
 func newRouterOptions(ctx context.Context, config *config.Config, d *daemon.Daemon) (routerOptions, error) {
@@ -685,6 +692,7 @@ func (opts routerOptions) Build() []router.Router {
 		swarmrouter.NewRouter(opts.cluster),
 		pluginrouter.NewRouter(opts.daemon.PluginManager()),
 		distributionrouter.NewRouter(opts.daemon.ImageBackend()),
+		telemetryrouter.NewRouter(opts.telemetry),
 	}
 
 	if opts.buildBackend != nil {

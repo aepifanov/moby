@@ -83,6 +83,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rootless-containers/rootlesskit/v2 v2.0.0
+	github.com/segmentio/analytics-go/v3 v3.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
@@ -181,6 +182,7 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0 // indirect
+	github.com/segmentio/backo-go v1.0.1 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/spdx/tools-golang v0.5.1 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect

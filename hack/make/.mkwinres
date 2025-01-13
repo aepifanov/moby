@@ -27,7 +27,7 @@ cat > "./cli/winresources/${BINARY_NAME}/winres.json" << EOL
     "#1": {
       "0409": {
         "identity": {},
-        "description": "Docker Engine",
+        "description": "MCR Engine",
         "minimum-os": "vista",
         "execution-level": "",
         "ui-access": false,
@@ -62,7 +62,7 @@ cat > "./cli/winresources/${BINARY_NAME}/winres.json" << EOL
           "0000": {
             "CompanyName": "${PACKAGER_NAME}",
             "FileVersion": "${VERSION}",
-            "LegalCopyright": "Copyright © 2015-$(date +'%Y') Docker Inc.",
+            "LegalCopyright": "Copyright © 2005-$(date +'%Y') Mirantis Inc.",
             "OriginalFileName": "$(basename "${BINARY_FULLNAME}")",
             "ProductName": "${PRODUCT}",
             "ProductVersion": "${VERSION}",

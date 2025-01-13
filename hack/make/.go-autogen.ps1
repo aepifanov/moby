@@ -79,7 +79,7 @@ try {
     "#1": {
       "0409": {
         "identity": {},
-        "description": "Docker Engine",
+        "description": "MCR Engine",
         "minimum-os": "vista",
         "execution-level": "",
         "ui-access": false,
@@ -114,7 +114,7 @@ try {
           "0000": {
             "CompanyName": "'+$PackagerName+'",
             "FileVersion": "'+$DockerVersion+'",
-            "LegalCopyright": "Copyright (C) 2015-'+$currentYear+' Docker Inc.",
+            "LegalCopyright": "Copyright (C) 2005-'+$currentYear+' Mirantis Inc.",
             "OriginalFileName": "dockerd.exe",
             "ProductName": "'+$Product+'",
             "ProductVersion": "'+$DockerVersion+'",

@@ -11,4 +11,7 @@ import (
 	_ "github.com/gogo/protobuf/protoc-gen-gogofaster"
 	_ "github.com/gogo/protobuf/protoc-gen-gogoslick"
 	_ "github.com/golang/protobuf/protoc-gen-go"
+
+	_ "github.com/rootless-containers/rootlesskit/v2/cmd/rootlesskit"
+	_ "github.com/rootless-containers/rootlesskit/v2/cmd/rootlesskit-docker-proxy"
 )

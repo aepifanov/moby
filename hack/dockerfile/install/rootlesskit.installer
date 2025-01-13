@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
-# When updating, also update vendor.mod and Dockerfile accordingly.
-: "${ROOTLESSKIT_VERSION:=v2.0.2}"
+if [ -n "${ROOTLESSKIT_VERSION}" ]; then
+	echo "Support for installing a different version of rootlesskit by setting ROOTLESSKIT_VERSION has been removed. Change the version to install by updating the rootlesskit module version in vendor.mod."
+	exit 1
+fi
 
 install_rootlesskit() {
 	case "$1" in
@@ -20,14 +22,16 @@ install_rootlesskit() {
 }
 
 install_rootlesskit_dynamic() {
-	export ROOTLESSKIT_LDFLAGS="-linkmode=external" install_rootlesskit
+	export ROOTLESSKIT_LDFLAGS="${ROOTLESSKIT_LDFLAGS:-} -linkmode=external" install_rootlesskit
 	export BUILD_MODE=${GO_BUILDMODE}
 	_install_rootlesskit
 }
 
 _install_rootlesskit() (
-	echo "Install rootlesskit version ${ROOTLESSKIT_VERSION}"
-	for f in rootlesskit rootlesskit-docker-proxy; do
-		GOBIN="${PREFIX}" GO111MODULE=on go install ${BUILD_MODE} -ldflags="$ROOTLESSKIT_LDFLAGS" "github.com/rootless-containers/rootlesskit/v2/cmd/${f}@${ROOTLESSKIT_VERSION}"
-	done
+	hack/with-go-mod.sh bash -x <<- EOF
+		echo "Install \$(GO111MODULE=on go list -modfile=vendor.mod -m github.com/rootless-containers/rootlesskit/v2)"
+		for f in rootlesskit rootlesskit-docker-proxy; do
+			GOBIN="${PREFIX}" GO111MODULE=on go install -modfile=vendor.mod ${BUILD_MODE} -ldflags="$ROOTLESSKIT_LDFLAGS" -tags="$ROOTLESSKIT_BUILDTAGS" "github.com/rootless-containers/rootlesskit/v2/cmd/\${f}"
+		done
+	EOF
 )

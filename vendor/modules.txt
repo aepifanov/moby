@@ -37,6 +37,9 @@ github.com/Azure/go-ansiterm/winterm
 # github.com/Graylog2/go-gelf v0.0.0-20191017102106-1550ee647df0
 ## explicit
 github.com/Graylog2/go-gelf/gelf
+# github.com/Masterminds/semver/v3 v3.2.1
+## explicit; go 1.18
+github.com/Masterminds/semver/v3
 # github.com/Microsoft/go-winio v0.6.2
 ## explicit; go 1.21
 github.com/Microsoft/go-winio
@@ -410,12 +413,18 @@ github.com/containernetworking/cni/pkg/types/create
 github.com/containernetworking/cni/pkg/types/internal
 github.com/containernetworking/cni/pkg/utils
 github.com/containernetworking/cni/pkg/version
+# github.com/containernetworking/plugins v1.4.0
+## explicit; go 1.20
+github.com/containernetworking/plugins/pkg/ns
 # github.com/coreos/go-systemd/v22 v22.5.0
 ## explicit; go 1.12
 github.com/coreos/go-systemd/v22/activation
 github.com/coreos/go-systemd/v22/daemon
 github.com/coreos/go-systemd/v22/dbus
 github.com/coreos/go-systemd/v22/journal
+# github.com/cpuguy83/go-md2man/v2 v2.0.3
+## explicit; go 1.11
+github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/cpuguy83/tar2go v0.3.1
 ## explicit; go 1.19
 github.com/cpuguy83/tar2go
@@ -606,7 +615,7 @@ github.com/google/s2a-go/stream
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 ## explicit; go 1.13
 github.com/google/shlex
-# github.com/google/uuid v1.5.0
+# github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
 # github.com/googleapis/enterprise-certificate-proxy v0.2.4
@@ -673,6 +682,13 @@ github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2
 # github.com/inconshreveable/mousetrap v1.1.0
 ## explicit; go 1.18
 github.com/inconshreveable/mousetrap
+# github.com/insomniacslk/dhcp v0.0.0-20230516061539-49801966e6cb
+## explicit; go 1.18
+github.com/insomniacslk/dhcp/dhcpv4
+github.com/insomniacslk/dhcp/dhcpv4/client4
+github.com/insomniacslk/dhcp/iana
+github.com/insomniacslk/dhcp/interfaces
+github.com/insomniacslk/dhcp/rfc1035label
 # github.com/ishidawataru/sctp v0.0.0-20230406120618-7ff4192f6ff2
 ## explicit; go 1.12
 github.com/ishidawataru/sctp
@@ -681,6 +697,9 @@ github.com/ishidawataru/sctp
 # github.com/jmoiron/sqlx v1.3.3
 ## explicit; go 1.10
 github.com/jmoiron/sqlx/types
+# github.com/josharian/native v1.1.0
+## explicit; go 1.13
+github.com/josharian/native
 # github.com/klauspost/compress v1.17.4
 ## explicit; go 1.19
 github.com/klauspost/compress
@@ -967,6 +986,9 @@ github.com/moby/sys/user
 ## explicit; go 1.18
 github.com/moby/term
 github.com/moby/term/windows
+# github.com/moby/vpnkit v0.5.0
+## explicit
+github.com/moby/vpnkit/go/pkg/vmnet
 # github.com/morikuni/aec v1.0.0
 ## explicit
 github.com/morikuni/aec
@@ -1010,6 +1032,13 @@ github.com/pelletier/go-toml
 # github.com/philhofer/fwd v1.1.2
 ## explicit; go 1.15
 github.com/philhofer/fwd
+# github.com/pierrec/lz4/v4 v4.1.17
+## explicit; go 1.14
+github.com/pierrec/lz4/v4
+github.com/pierrec/lz4/v4/internal/lz4block
+github.com/pierrec/lz4/v4/internal/lz4errors
+github.com/pierrec/lz4/v4/internal/lz4stream
+github.com/pierrec/lz4/v4/internal/xxh32
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
@@ -1031,12 +1060,48 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/rootless-containers/rootlesskit/v2 v2.0.0
+# github.com/rootless-containers/rootlesskit/v2 v2.0.2
 ## explicit; go 1.19
+github.com/rootless-containers/rootlesskit/v2/cmd/rootlesskit
+github.com/rootless-containers/rootlesskit/v2/cmd/rootlesskit-docker-proxy
 github.com/rootless-containers/rootlesskit/v2/pkg/api
 github.com/rootless-containers/rootlesskit/v2/pkg/api/client
+github.com/rootless-containers/rootlesskit/v2/pkg/api/router
+github.com/rootless-containers/rootlesskit/v2/pkg/child
+github.com/rootless-containers/rootlesskit/v2/pkg/common
+github.com/rootless-containers/rootlesskit/v2/pkg/copyup
+github.com/rootless-containers/rootlesskit/v2/pkg/copyup/tmpfssymlink
 github.com/rootless-containers/rootlesskit/v2/pkg/httputil
+github.com/rootless-containers/rootlesskit/v2/pkg/lowlevelmsgutil
+github.com/rootless-containers/rootlesskit/v2/pkg/messages
+github.com/rootless-containers/rootlesskit/v2/pkg/network
+github.com/rootless-containers/rootlesskit/v2/pkg/network/iputils
+github.com/rootless-containers/rootlesskit/v2/pkg/network/lxcusernic
+github.com/rootless-containers/rootlesskit/v2/pkg/network/parentutils
+github.com/rootless-containers/rootlesskit/v2/pkg/network/pasta
+github.com/rootless-containers/rootlesskit/v2/pkg/network/slirp4netns
+github.com/rootless-containers/rootlesskit/v2/pkg/network/vpnkit
+github.com/rootless-containers/rootlesskit/v2/pkg/parent
+github.com/rootless-containers/rootlesskit/v2/pkg/parent/cgrouputil
+github.com/rootless-containers/rootlesskit/v2/pkg/parent/dynidtools
+github.com/rootless-containers/rootlesskit/v2/pkg/parent/idtools
 github.com/rootless-containers/rootlesskit/v2/pkg/port
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin/child
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin/msg
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin/opaque
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin/parent
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin/parent/tcp
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin/parent/udp
+github.com/rootless-containers/rootlesskit/v2/pkg/port/builtin/parent/udp/udpproxy
+github.com/rootless-containers/rootlesskit/v2/pkg/port/portutil
+github.com/rootless-containers/rootlesskit/v2/pkg/port/slirp4netns
+github.com/rootless-containers/rootlesskit/v2/pkg/sigproxy
+github.com/rootless-containers/rootlesskit/v2/pkg/sigproxy/signal
+github.com/rootless-containers/rootlesskit/v2/pkg/version
+# github.com/russross/blackfriday/v2 v2.1.0
+## explicit
+github.com/russross/blackfriday/v2
 # github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529
 ## explicit
 github.com/sean-/seed
@@ -1057,6 +1122,9 @@ github.com/shibumi/go-pathspec
 ## explicit; go 1.13
 github.com/sirupsen/logrus
 github.com/sirupsen/logrus/hooks/test
+# github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
+## explicit
+github.com/songgao/water
 # github.com/spdx/tools-golang v0.5.1
 ## explicit; go 1.13
 github.com/spdx/tools-golang/convert
@@ -1114,6 +1182,13 @@ github.com/tonistiigi/units
 # github.com/tonistiigi/vt100 v0.0.0-20230623042737-f9a4f7ef6531
 ## explicit; go 1.12
 github.com/tonistiigi/vt100
+# github.com/u-root/uio v0.0.0-20230305220412-3e8cd9d6bf63
+## explicit; go 1.16
+github.com/u-root/uio/rand
+github.com/u-root/uio/uio
+# github.com/urfave/cli/v2 v2.27.1
+## explicit; go 1.18
+github.com/urfave/cli/v2
 # github.com/vbatts/tar-split v0.11.5
 ## explicit; go 1.17
 github.com/vbatts/tar-split/archive/tar
@@ -1129,6 +1204,9 @@ github.com/vishvananda/netns
 # github.com/weppos/publicsuffix-go v0.15.1-0.20210511084619-b1f36a2d6c0b
 ## explicit; go 1.11
 github.com/weppos/publicsuffix-go/publicsuffix
+# github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673
+## explicit
+github.com/xrash/smetrics
 # github.com/zmap/zcrypto v0.0.0-20210511125630-18f1e0152cfc
 ## explicit; go 1.16
 github.com/zmap/zcrypto/dsa

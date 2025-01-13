@@ -348,15 +348,14 @@ FROM binary-dummy AS tini-windows
 FROM tini-${TARGETOS} AS tini
 
 # rootlesskit
-FROM base AS rootlesskit-src
-WORKDIR /usr/src/rootlesskit
-RUN git init . && git remote add origin "https://github.com/rootless-containers/rootlesskit.git"
-# When updating, also update vendor.mod and hack/dockerfile/install/rootlesskit.installer accordingly.
-ARG ROOTLESSKIT_VERSION=v2.0.2
-RUN git fetch -q --depth 1 origin "${ROOTLESSKIT_VERSION}" +refs/tags/*:refs/tags/* && git checkout -q FETCH_HEAD
+FROM base AS vendor-src
+WORKDIR /usr/src/moby
+COPY ./vendor.mod /usr/src/moby/go.mod
+COPY ./vendor.sum /usr/src/moby/go.sum
+COPY ./vendor /usr/src/moby/vendor
 
 FROM base AS rootlesskit-build
-WORKDIR /go/src/github.com/rootless-containers/rootlesskit
+WORKDIR /go/src/moby
 ARG TARGETPLATFORM
 RUN --mount=type=cache,sharing=locked,id=moby-rootlesskit-aptlib,target=/var/lib/apt \
     --mount=type=cache,sharing=locked,id=moby-rootlesskit-aptcache,target=/var/cache/apt \
@@ -366,14 +365,14 @@ RUN --mount=type=cache,sharing=locked,id=moby-rootlesskit-aptlib,target=/var/lib
             pkg-config
 ENV GO111MODULE=on
 ARG DOCKER_STATIC
-RUN --mount=from=rootlesskit-src,src=/usr/src/rootlesskit,rw \
+RUN --mount=from=vendor-src,src=/usr/src/moby \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build,id=rootlesskit-build-$TARGETPLATFORM <<EOT
   set -e
   export CGO_ENABLED=$([ "$DOCKER_STATIC" = "1" ] && echo "0" || echo "1")
-  xx-go build -o /build/rootlesskit -ldflags="$([ "$DOCKER_STATIC" != "1" ] && echo "-linkmode=external")" ./cmd/rootlesskit
+  xx-go build -o /build/rootlesskit -ldflags="$([ "$DOCKER_STATIC" != "1" ] && echo "-linkmode=external")" github.com/rootless-containers/rootlesskit/v2/cmd/rootlesskit
   xx-verify $([ "$DOCKER_STATIC" = "1" ] && echo "--static") /build/rootlesskit
-  xx-go build -o /build/rootlesskit-docker-proxy -ldflags="$([ "$DOCKER_STATIC" != "1" ] && echo "-linkmode=external")" ./cmd/rootlesskit-docker-proxy
+  xx-go build -o /build/rootlesskit-docker-proxy -ldflags="$([ "$DOCKER_STATIC" != "1" ] && echo "-linkmode=external")" github.com/rootless-containers/rootlesskit/v2/cmd/rootlesskit-docker-proxy
   xx-verify $([ "$DOCKER_STATIC" = "1" ] && echo "--static") /build/rootlesskit-docker-proxy
 EOT
 COPY --link ./contrib/dockerd-rootless.sh /build/

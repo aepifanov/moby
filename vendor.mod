@@ -109,6 +109,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20231016165738-49dd2c1f3d0b
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.33.0
+	gopkg.in/square/go-jose.v2 v2.5.1
 	gotest.tools/v3 v3.5.1
 	resenje.org/singleflight v0.4.1
 	tags.cncf.io/container-device-interface v0.6.2

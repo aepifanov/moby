@@ -72,6 +72,8 @@ type Info struct {
 	InitCommit          Commit
 	SecurityOptions     []string
 	ProductLicense      string               `json:",omitempty"`
+	MirantisLicenseSubj string               `json:"-"`
+	MirantisLicenseSrc  string               `json:"-"`
 	DefaultAddressPools []NetworkAddressPool `json:",omitempty"`
 	CDISpecDirs         []string
 

@@ -174,7 +174,7 @@ Function Get-UpstreamCommit() {
 # Build a binary (client or daemon)
 Function Execute-Build($type, $additionalBuildTags, $directory, $ldflags) {
     # Generate the build flags
-    $buildTags = ""
+    $buildTags = "$env:GO_BUILDTAGS"
     if ($Noisy)                     { $verboseParm=" -v" }
     if ($Race)                      { Write-Warning "Using race detector"; $raceParm=" -race"}
     if ($ForceBuildAll)             { $allParm=" -a" }

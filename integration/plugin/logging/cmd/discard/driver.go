@@ -7,6 +7,8 @@ import (
 	"os"
 	"sync"
 	"syscall"
+
+	"github.com/docker/docker/daemon/logger"
 )
 
 type startLoggingRequest struct {
@@ -14,9 +16,7 @@ type startLoggingRequest struct {
 }
 
 type capabilitiesResponse struct {
-	Cap struct {
-		ReadLogs bool
-	}
+	Cap logger.Capability
 }
 
 type driver struct {
@@ -66,9 +66,7 @@ func handle(mux *http.ServeMux) {
 	})
 
 	mux.HandleFunc("/LogDriver.Capabilities", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(&capabilitiesResponse{
-			Cap: struct{ ReadLogs bool }{ReadLogs: false},
-		})
+		json.NewEncoder(w).Encode(&capabilitiesResponse{})
 	})
 }
 

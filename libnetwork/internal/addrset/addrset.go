@@ -220,6 +220,10 @@ func (as *AddrSet) Unselected() (unselected uint64) {
 	return unselected
 }
 
+func (as *AddrSet) Pool() netip.Prefix {
+	return as.pool
+}
+
 func (as *AddrSet) addrsPerBitmap() uint64 {
 	bits := as.pool.Addr().BitLen() - as.pool.Bits()
 	if bits > maxBitsPerBitmap {

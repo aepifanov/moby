@@ -109,6 +109,16 @@ func (aSpace *addrSpace) allocateSubnetL(nw, sub netip.Prefix) error {
 		aSpace.subnets[nw].autoRelease = true
 	}
 	aSpace.subnets[nw].children[sub] = struct{}{}
+
+	bits := nw.Addr().BitLen() - nw.Bits()
+	aSpace.subnets[nw].availableRange = aSpace.subnets[nw].capacityRange()
+	if nw.Addr() == sub.Addr() && (!nw.Addr().Is4() || bits > 1) {
+		aSpace.decAvailableAddrsRange(nw)
+	}
+	if netiputil.LastAddr(nw) == netiputil.LastAddr(sub) && (nw.Addr().Is4() && bits > 1) {
+		aSpace.decAvailableAddrsRange(nw)
+	}
+
 	return nil
 }
 
@@ -343,6 +353,16 @@ func (aSpace *addrSpace) requestAddress(nw, sub netip.Prefix, prefAddress netip.
 		return netip.Addr{}, err
 	}
 
+	if len(p.children) == 0 {
+		aSpace.decAvailableAddrsRange(nw)
+	} else {
+		for sub, _ := range p.children {
+			if sub.Contains(ip) {
+				aSpace.decAvailableAddrsRange(nw)
+			}
+		}
+	}
+
 	return ip, nil
 }
 
@@ -370,5 +390,42 @@ func (aSpace *addrSpace) releaseAddress(nw, sub netip.Prefix, address netip.Addr
 
 	defer log.G(context.TODO()).Debugf("Released address Address:%v Sequence:%s", address, p.addrs)
 
-	return p.addrs.Remove(address)
+	if err := p.addrs.Remove(address); err != nil {
+		return err
+	}
+
+	if len(p.children) == 0 {
+		aSpace.incAvailableAddrsRange(nw)
+	} else {
+		for sub, _ := range p.children {
+			if sub.Contains(address) {
+				aSpace.incAvailableAddrsRange(nw)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (aSpace *addrSpace) incAvailableAddrsRange(nw netip.Prefix) {
+	aSpace.subnets[nw].availableRange = aSpace.subnets[nw].availableRange.Add64(1)
+}
+
+func (aSpace *addrSpace) decAvailableAddrsRange(nw netip.Prefix) {
+	aSpace.subnets[nw].availableRange = aSpace.subnets[nw].availableRange.Sub64(1)
+}
+
+// AvailableAddrs returns the number of available addresses in the subnet and address pool
+func (aSpace *addrSpace) AvailableAddrs(nw netip.Prefix) (availableAddrsSubnet, availableAddrsRange uint64, err error) {
+	aSpace.mu.Lock()
+	defer aSpace.mu.Unlock()
+
+	p, ok := aSpace.subnets[nw]
+	if !ok {
+		return 0, 0, types.NotFoundErrorf("cannot find address pool for %v", nw)
+	}
+
+	availableAddrsSubnet, availableAddrsRange = p.AvailableAddrs()
+
+	return
 }

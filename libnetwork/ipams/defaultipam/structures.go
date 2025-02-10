@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/docker/libnetwork/internal/addrset"
 	"github.com/docker/docker/libnetwork/types"
+	"lukechampine.com/uint128"
 )
 
 // PoolID is the pointer to the configured pools in each address space
@@ -19,6 +20,8 @@ type PoolID struct {
 type PoolData struct {
 	addrs    *addrset.AddrSet
 	children map[netip.Prefix]struct{}
+
+	availableRange uint128.Uint128
 
 	// Whether to implicitly release the pool once it no longer has any children.
 	autoRelease bool
@@ -71,6 +74,38 @@ func (s *PoolID) String() string {
 // String returns the string form of the PoolData object
 func (p *PoolData) String() string {
 	return fmt.Sprintf("PoolData[Children: %d]", len(p.children))
+}
+
+// subnetCapacity returns the number of IP addresses in the given subnet.
+func subnetCapacity(subnet netip.Prefix) uint128.Uint128 {
+	capacity := uint128.From64(1)
+	// Calculate the number of host bits
+	hostBits := uint(subnet.Addr().BitLen() - subnet.Bits())
+	// The number of IP addresses is 2^hostBits
+	return capacity.Lsh(hostBits)
+}
+
+func (p *PoolData) capacityRange() (capacity uint128.Uint128) {
+	if len(p.children) == 0 {
+		return subnetCapacity(p.addrs.Pool())
+	}
+
+	for child, _ := range p.children {
+		capacity = capacity.Add(subnetCapacity(child))
+	}
+
+	return
+}
+
+func (p *PoolData) AvailableAddrs() (availableSubnet uint64, availableRange uint64) {
+	availableSubnet = p.addrs.Unselected()
+	if p.availableRange.Cmp(uint128.New(0, 1)) > 0 {
+		availableRange = addrset.MaxUint64
+	} else {
+		availableRange = p.availableRange.Lo
+	}
+	availableSubnet = p.addrs.Unselected()
+	return
 }
 
 // mergeIter is used to iterate on both 'a' and 'b' at the same time while

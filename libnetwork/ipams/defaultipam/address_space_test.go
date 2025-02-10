@@ -498,3 +498,154 @@ func TestPoolAllocateAndRelease(t *testing.T) {
 		})
 	}
 }
+
+func TestAllocationIPCounters(t *testing.T) {
+	type testClosures struct {
+		alloc   func(ip netip.Addr, availableSubnetExpected, availableRangeExpected uint64)
+		release func(ip netip.Addr, availableSubnetExpected, availableRangeExpected uint64)
+	}
+
+	testcases := []struct {
+		name       string
+		predefined []*ipamutils.NetworkToSplit
+		subnet     netip.Prefix
+		ipRange    netip.Prefix
+		calls      []func(tcs testClosures)
+		tcs        testClosures
+	}{
+		{
+			name: "check allocated IP counters without IP Range for IPv6",
+			predefined: []*ipamutils.NetworkToSplit{
+				{Base: netip.MustParsePrefix("2001:db8::/56"), Size: 64},
+			},
+			subnet: netip.MustParsePrefix("2001:db8::/120"),
+			calls: []func(tcs testClosures){
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 254, 254) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("2001:db8::10"), 253, 253) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("2001:db8::10"), 254, 254) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 253, 253) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 252, 252) },
+			},
+		},
+		{
+			name: "check allocated IP counters with IP Range for IPv6",
+			predefined: []*ipamutils.NetworkToSplit{
+				{Base: netip.MustParsePrefix("2001:db8::/56"), Size: 64},
+			},
+			subnet:  netip.MustParsePrefix("2001:db8::/120"),
+			ipRange: netip.MustParsePrefix("2001:db8::80/125"),
+			calls: []func(tcs testClosures){
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 254, 7) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("2001:db8::10"), 253, 7) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 252, 6) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 251, 5) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("2001:db8::10"), 252, 5) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("2001:db8::85"), 251, 4) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("2001:db8::85"), 252, 5) },
+			},
+		},
+		{
+			name: "check allocated IP counters with IP Range for IPv6",
+			predefined: []*ipamutils.NetworkToSplit{
+				{Base: netip.MustParsePrefix("2001:db8::/56"), Size: 64},
+			},
+			subnet:  netip.MustParsePrefix("2001:db8::/60"),
+			ipRange: netip.MustParsePrefix("2001:db8::80/125"),
+			calls: []func(tcs testClosures){
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 0xffffffffffffffff, 7) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("2001:db8::10"), 0xffffffffffffffff, 7) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 0xffffffffffffffff, 6) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 0xffffffffffffffff, 5) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("2001:db8::10"), 0xffffffffffffffff, 5) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("2001:db8::85"), 0xffffffffffffffff, 4) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("2001:db8::85"), 0xffffffffffffffff, 5) },
+			},
+		},
+		{
+			name: "check allocated IP counters without IP Range for IPv6 with limited counters",
+			predefined: []*ipamutils.NetworkToSplit{
+				{Base: netip.MustParsePrefix("2001:db8::/56"), Size: 64},
+			},
+			subnet: netip.MustParsePrefix("2001:db8::/60"),
+			calls: []func(tcs testClosures){
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 0xffffffffffffffff, 0xffffffffffffffff) },
+				func(tcs testClosures) {
+					tcs.alloc(netip.MustParseAddr("2001:db8::10"), 0xffffffffffffffff, 0xffffffffffffffff)
+				},
+				func(tcs testClosures) {
+					tcs.release(netip.MustParseAddr("2001:db8::10"), 0xffffffffffffffff, 0xffffffffffffffff)
+				},
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 0xffffffffffffffff, 0xffffffffffffffff) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 0xffffffffffffffff, 0xffffffffffffffff) },
+			},
+		},
+		{
+			name: "check allocated IP counters without IP Range",
+			predefined: []*ipamutils.NetworkToSplit{
+				{Base: netip.MustParsePrefix("10.0.0.0/16"), Size: 24},
+			},
+			subnet: netip.MustParsePrefix("10.0.0.0/24"),
+			calls: []func(tcs testClosures){
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 253, 253) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("10.0.0.10"), 252, 252) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("10.0.0.10"), 253, 253) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 252, 252) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 251, 251) },
+			},
+		},
+		{
+			name: "check allocated IP counters with IP Range",
+			predefined: []*ipamutils.NetworkToSplit{
+				{Base: netip.MustParsePrefix("10.0.0.0/16"), Size: 24},
+			},
+			subnet:  netip.MustParsePrefix("10.0.0.0/24"),
+			ipRange: netip.MustParsePrefix("10.0.0.128/29"),
+			calls: []func(tcs testClosures){
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 253, 7) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("10.0.0.10"), 252, 7) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 251, 6) },
+				func(tcs testClosures) { tcs.alloc(netip.Addr{}, 250, 5) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("10.0.0.10"), 251, 5) },
+				func(tcs testClosures) { tcs.alloc(netip.MustParseAddr("10.0.0.131"), 250, 4) },
+				func(tcs testClosures) { tcs.release(netip.MustParseAddr("10.0.0.131"), 251, 5) },
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			as, err := newAddrSpace(tc.predefined)
+			assert.NilError(t, err)
+
+			err = as.allocateSubnet(tc.subnet, tc.ipRange)
+			assert.NilError(t, err)
+
+			tcs := testClosures{
+				// Allocate a IP Address from subnet, check that that IP counters
+				// are the same as expected.
+				alloc: func(ip netip.Addr, availableSubnetExpected, availableRangeExpected uint64) {
+					ip, err := as.requestAddress(tc.subnet, tc.ipRange, ip, map[string]string{})
+					assert.NilError(t, err)
+					availableSubnet, availableRange, err := as.AvailableAddrs(tc.subnet)
+					assert.NilError(t, err)
+					assert.Equal(t, availableSubnet, availableSubnetExpected)
+					assert.Equal(t, availableRange, availableRangeExpected)
+				},
+				// Release a IP Address from subnet, check that that IP counters
+				// are the same as expected.
+				release: func(ip netip.Addr, subnetAllocatedExpected, availableRangeExpected uint64) {
+					err := as.releaseAddress(tc.subnet, netip.Prefix{}, ip)
+					assert.NilError(t, err)
+					availableSubnet, availableRange, err := as.AvailableAddrs(tc.subnet)
+					assert.NilError(t, err)
+					assert.Equal(t, availableSubnet, subnetAllocatedExpected)
+					assert.Equal(t, availableRange, availableRangeExpected)
+				},
+			}
+
+			for _, f := range tc.calls {
+				f(tcs)
+			}
+		})
+	}
+}

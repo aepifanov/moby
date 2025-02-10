@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/libnetwork/ipamapi"
 	"github.com/docker/docker/libnetwork/ipamutils"
 	"github.com/docker/docker/libnetwork/types"
+	"lukechampine.com/uint128"
 )
 
 const (
@@ -217,17 +218,21 @@ func newPoolData(pool netip.Prefix) *PoolData {
 	//   - Except in a /31 point-to-point link, https://datatracker.ietf.org/doc/html/rfc3021
 	// - IPv6 Subnet-Router anycast address, https://datatracker.ietf.org/doc/html/rfc4291#section-2.6.1
 	bits := pool.Addr().BitLen() - pool.Bits()
+	allocated := uint128.New(1, 0)
+	allocated = allocated.Lsh(uint(bits))
 	if !pool.Addr().Is4() || bits > 1 {
 		h.Add(pool.Addr())
+		allocated = allocated.Sub64(1)
 	}
 
 	// For IPv4, reserve the broadcast address.
 	// - Except in a /31 point-to-point link, https://datatracker.ietf.org/doc/html/rfc3021
 	if pool.Addr().Is4() && bits > 1 {
 		h.Add(netiputil.LastAddr(pool))
+		allocated = allocated.Sub64(1)
 	}
 
-	return &PoolData{addrs: h, children: map[netip.Prefix]struct{}{}}
+	return &PoolData{addrs: h, children: map[netip.Prefix]struct{}{}, availableRange: allocated}
 }
 
 // RequestAddress returns an address from the specified pool ID

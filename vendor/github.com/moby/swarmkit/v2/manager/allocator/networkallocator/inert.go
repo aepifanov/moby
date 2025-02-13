@@ -127,3 +127,7 @@ func (Inert) IsServiceAllocated(s *api.Service, flags ...func(*ServiceAllocation
 func (Inert) IsTaskAllocated(t *api.Task) bool {
 	return (Inert{}).AllocateTask(t) == nil
 }
+
+func (Inert) UpdateNetworkState(*api.Network) error {
+	return nil
+}

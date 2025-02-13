@@ -265,3 +265,5 @@ exclude (
 replace github.com/moby/moby/client => ./client
 
 replace github.com/moby/moby/api => ./api
+
+replace github.com/moby/swarmkit/v2 v2.0.0 => github.com/aepifanov/swarmkit/v2 v2.0.0-20250807065813-ffc54a3c2bb3

@@ -87,6 +87,11 @@ type NetworkAllocator interface {
 	IsAttachmentAllocated(node *api.Node, networkAttachment *api.NetworkAttachment) bool
 }
 
+// NetworkStateUpdater is an interface for updating the network state in the store.
+type NetworkStateUpdater interface {
+	UpdateNetworkState(*api.Network) error
+}
+
 // Config is used to store network related cluster config in the Manager.
 type Config struct {
 	// DefaultAddrPool specifies default subnet pool for global scope networks

@@ -259,3 +259,5 @@ exclude (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 )
+
+replace github.com/moby/swarmkit/v2 v2.0.0-20250103191802-8c1959736554 => github.com/aepifanov/swarmkit/v2 v2.0.0-20250213005643-36bff1a5b9e1

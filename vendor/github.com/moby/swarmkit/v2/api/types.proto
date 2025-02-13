@@ -673,6 +673,28 @@ message IPAMConfig {
 	map<string, string> reserved = 5;
 }
 
+// IPAMState specifies the current state of IP Address Management.
+message IPAMState {
+	// Subnet defines a network as a CIDR address (ie network and mask
+	// 192.168.0.1/24).
+	string subnet = 1;
+
+	// Range defines the portion of the subnet to allocate to tasks. This is
+	// defined as a subnet within the primary subnet.
+	string range = 2;
+
+	// Counter of allocated IPs in the subnet
+	uint64 subnet_allocated = 3;
+	// Counter of allocated IPs in the allocation pool
+	uint64 range_allocated = 4;
+}
+
+// NetworkState specifies the current state of a network.
+message NetworkState {
+	// IPAMState specifies the current state of IP Address Management of the network.
+	repeated IPAMState ipam = 1 [(gogoproto.customname) = "IPAM"];
+}
+
 // PortConfig specifies an exposed port which can be
 // addressed using the given name. This can be later queried
 // using a service discovery api or a DNS SRV query. The node

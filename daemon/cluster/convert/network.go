@@ -155,6 +155,19 @@ func BasicNetworkFromGRPC(n swarmapi.Network) network.Inspect {
 			})
 		}
 	}
+	var netState *network.NetworkState
+	if n.State != nil {
+		netState = &network.NetworkState{}
+		for _, is := range n.State.IPAM {
+			ipamSt := network.IPAMState{
+				Subnet:               is.Subnet,
+				IPRange:              is.Range,
+				AllocatedIPsInSubnet: is.SubnetAllocated,
+				AllocatedIPsInPool:   is.RangeAllocated,
+			}
+			netState.IPAM = append(netState.IPAM, ipamSt)
+		}
+	}
 
 	nr := network.Inspect{
 		ID:         n.ID,
@@ -163,6 +176,7 @@ func BasicNetworkFromGRPC(n swarmapi.Network) network.Inspect {
 		EnableIPv4: true,
 		EnableIPv6: spec.Ipv6Enabled,
 		IPAM:       ipam,
+		State:      netState,
 		Internal:   spec.Internal,
 		Attachable: spec.Attachable,
 		Ingress:    IsIngressNetwork(&n),

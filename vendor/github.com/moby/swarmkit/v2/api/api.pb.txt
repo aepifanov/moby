@@ -3306,6 +3306,51 @@ file {
     }
   }
   message_type {
+    name: "IPAMState"
+    field {
+      name: "subnet"
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_STRING
+      json_name: "subnet"
+    }
+    field {
+      name: "range"
+      number: 2
+      label: LABEL_OPTIONAL
+      type: TYPE_STRING
+      json_name: "range"
+    }
+    field {
+      name: "subnet_allocated"
+      number: 3
+      label: LABEL_OPTIONAL
+      type: TYPE_UINT64
+      json_name: "subnetAllocated"
+    }
+    field {
+      name: "range_allocated"
+      number: 4
+      label: LABEL_OPTIONAL
+      type: TYPE_UINT64
+      json_name: "rangeAllocated"
+    }
+  }
+  message_type {
+    name: "NetworkState"
+    field {
+      name: "ipam"
+      number: 1
+      label: LABEL_REPEATED
+      type: TYPE_MESSAGE
+      type_name: ".docker.swarmkit.v1.IPAMState"
+      options {
+        65004: "IPAM"
+      }
+      json_name: "ipam"
+    }
+  }
+  message_type {
     name: "PortConfig"
     field {
       name: "name"
@@ -7214,6 +7259,14 @@ file {
       label: LABEL_OPTIONAL
       type: TYPE_BOOL
       json_name: "pendingDelete"
+    }
+    field {
+      name: "state"
+      number: 7
+      label: LABEL_OPTIONAL
+      type: TYPE_MESSAGE
+      type_name: ".docker.swarmkit.v1.NetworkState"
+      json_name: "state"
     }
     options {
       70001 {

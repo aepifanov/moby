@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"strings"
 
 	"github.com/containerd/log"
@@ -87,6 +88,10 @@ type networkDriver struct {
 
 // NewAllocator returns a new NetworkAllocator handle
 func (p *Provider) NewAllocator(netConfig *networkallocator.Config) (networkallocator.NetworkAllocator, error) {
+	if p.na != interface{}(nil) {
+		return p.na, nil
+	}
+
 	na := &cnmNetworkAllocator{
 		networks: make(map[string]*network),
 		services: make(map[string]struct{}),
@@ -111,7 +116,8 @@ func (p *Provider) NewAllocator(netConfig *networkallocator.Config) (networkallo
 		return nil, fmt.Errorf("failed to initialize IPAM driver plugins: %w", err)
 	}
 
-	return na, nil
+	p.na = na
+	return p.na, nil
 }
 
 // Allocate allocates all the necessary resources both general
@@ -979,4 +985,31 @@ func setIPAMSerialAlloc(opts map[string]string) map[string]string {
 		opts[ipamapi.AllocSerialPrefix] = "true"
 	}
 	return opts
+}
+
+func (na *cnmNetworkAllocator) UpdateNetworkState(net *api.Network) error {
+	n := na.getNetwork(net.ID)
+
+	ipam, _, _, err := na.resolveIPAM(n.nw)
+	if err != nil {
+		return errors.Wrap(err, "failed to resolve IPAM while allocating")
+	}
+
+	var state api.NetworkState
+	for _, p := range n.pools {
+		pi, err := defaultipam.PoolIDFromString(p)
+		ipamSt := api.IPAMState{
+			Subnet: pi.Subnet.String(),
+		}
+		if pi.ChildSubnet != (netip.Prefix{}) {
+			ipamSt.Range = pi.ChildSubnet.String()
+		}
+		if ipamSt.SubnetAllocated, ipamSt.RangeAllocated, err = ipam.GetAllocatedIPs(p); err != nil {
+			return fmt.Errorf("failed to get available IPs for pool %s: %v", p, err)
+		}
+		state.IPAM = append(state.IPAM, &ipamSt)
+	}
+
+	net.State = &state
+	return nil
 }

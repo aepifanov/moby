@@ -332,6 +332,8 @@ message Network {
 	// the services that still use this service, and proceed to delete
 	// this network when all of these services are gone
 	bool pending_delete = 6;
+
+	NetworkState state = 7;
 }
 
 // Cluster provides global cluster settings.
